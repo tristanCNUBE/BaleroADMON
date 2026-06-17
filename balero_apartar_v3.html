@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>El Balero — Sistema Interno</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FAF7F2; --warm: #F5EFE6; --gold: #C9A84C; --gold2: #E8C96A;
+    --dark: #1C1611; --brown: #4A3728; --muted: #9B8E82; --border: #E8DDD0;
+    --green: #2D6A4F; --green-light: #D8F3DC; --red: #C1440E; --red-light: #FDECEA;
+    --blue: #1D4ED8; --blue-light: #DBEAFE;
+    --shadow: 0 4px 24px rgba(28,22,17,0.08);
+    --shadow-lg: 0 12px 48px rgba(28,22,17,0.14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--cream); color: var(--dark); font-family: 'DM Sans', sans-serif;
+    min-height: 100vh; display: flex; align-items: flex-start; justify-content: center;
+    padding: 1.5rem;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.08) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.06) 0%, transparent 60%); }
+  .container { width: 100%; max-width: 420px; padding-top: 1rem; }
+  .header { text-align: center; margin-bottom: 1.25rem; }
+  .logo-wrap { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; background: var(--dark); border-radius: 14px; margin-bottom: 0.6rem; box-shadow: var(--shadow); }
+  .logo-wrap span { font-size: 26px; }
+  h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 900; letter-spacing: -0.02em; }
+  h1 em { font-style: italic; color: var(--gold); }
+  .subtitle { font-size: 0.72rem; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* TABS */
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 1rem; }
+  .tab { padding: 10px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--warm);
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; text-align: center; color: var(--muted); }
+  .tab.active { background: var(--dark); color: var(--gold2); border-color: var(--dark); }
+  .tab:hover:not(.active) { border-color: var(--gold); color: var(--dark); }
+
+  .card { background: #fff; border-radius: 20px; box-shadow: var(--shadow-lg); overflow: hidden; border: 1px solid var(--border); }
+  .gold-line { height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold2), var(--gold)); }
+  .card-inner { padding: 1.5rem; }
+
+  /* PIN */
+  .pin-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; text-align: center; margin-bottom: 0.3rem; }
+  .pin-sub { font-size: 0.78rem; color: var(--muted); text-align: center; margin-bottom: 1.5rem; }
+  .pin-dots { display: flex; justify-content: center; gap: 14px; margin-bottom: 1.5rem; }
+  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: transparent; transition: all 0.15s; }
+  .pin-dot.filled { background: var(--gold); border-color: var(--gold); transform: scale(1.15); }
+  .pin-dot.error { background: var(--red); border-color: var(--red); animation: shake 0.3s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+  .pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pin-btn { aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 12px; background: var(--warm);
+    font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--dark);
+    cursor: pointer; transition: all 0.1s; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 1px; user-select: none; }
+  .pin-btn:active { transform: scale(0.93); background: var(--border); }
+  .pin-btn .letters { font-size: 0.5rem; font-family: 'DM Mono', monospace; color: var(--muted); letter-spacing: 0.1em; }
+  .pin-btn.zero { grid-column: 2; }
+  .pin-btn.del { background: transparent; border-color: transparent; font-size: 1.1rem; }
+
+  /* WEBHOOK BAR */
+  .webhook-bar { display: flex; align-items: center; gap: 10px; background: var(--warm); border: 1px dashed var(--border); border-radius: 10px; padding: 8px 12px; margin-bottom: 1.25rem; }
+  .webhook-bar label { font-size: 0.68rem; font-family: 'DM Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+  .webhook-bar input { flex: 1; background: transparent; border: none; font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--brown); outline: none; min-width: 0; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.3s; }
+  .status-dot.ok { background: var(--green); box-shadow: 0 0 6px rgba(45,106,79,0.4); }
+  .status-dot.err { background: var(--red); }
+  .status-dot.checking { background: var(--gold); animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* TOGGLE */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--warm); border: 1.5px solid var(--border); border-radius: 12px; margin-bottom: 1.25rem; cursor: pointer; transition: border-color 0.15s; }
+  .toggle-row:hover { border-color: var(--gold); }
+  .toggle-row.active { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+  .toggle-label strong { font-size: 0.9rem; font-weight: 600; }
+  .toggle-label span { font-size: 0.75rem; color: var(--muted); display: block; margin-top: 2px; }
+  .toggle-switch { width: 44px; height: 24px; background: var(--border); border-radius: 12px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+  .toggle-switch.on { background: var(--gold); }
+  .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+  .toggle-switch.on::after { transform: translateX(20px); }
+
+  /* SEARCH */
+  .search-box { position: relative; margin-bottom: 1rem; }
+  .search-box input { width: 100%; padding: 12px 48px 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; color: var(--dark); background: var(--warm); outline: none; transition: border-color 0.15s; }
+  .search-box input:focus { border-color: var(--gold); background: #fff; box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+  .search-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--dark); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background 0.15s; }
+  .search-btn:hover { background: var(--brown); }
+
+  /* FOUND CARD */
+  .found-card { background: var(--green-light); border: 1.5px solid var(--green); border-radius: 12px; padding: 12px 14px; margin-bottom: 1rem; display: none; }
+  .found-card.show { display: block; animation: fadeIn 0.3s ease; }
+  .found-card.warning { background: #FFF8E1; border-color: #F59E0B; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+  .found-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .found-name { font-weight: 700; font-size: 0.95rem; color: var(--green); }
+  .found-card.warning .found-name { color: #92400E; }
+  .found-badge { font-size: 0.68rem; font-family: 'DM Mono', monospace; background: var(--green); color: #fff; padding: 2px 8px; border-radius: 4px; }
+  .found-card.warning .found-badge { background: #F59E0B; }
+  .found-details { font-size: 0.8rem; color: var(--brown); line-height: 1.7; }
+  .found-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .stat-pill { background: rgba(45,106,79,0.1); border-radius: 8px; padding: 6px 10px; text-align: center; }
+  .stat-pill .val { font-weight: 700; font-size: 0.95rem; color: var(--green); }
+  .stat-pill .lbl { font-size: 0.68rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .btn-pdf { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 12px; background: var(--dark); color: var(--gold2); border: none; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: none; }
+
+  .not-found-msg { background: var(--red-light); border: 1px solid rgba(193,68,14,0.2); border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; color: var(--red); margin-bottom: 1rem; display: none; }
+  .not-found-msg.show { display: block; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 0.68rem; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.75rem; margin-top: 1.25rem; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-title:first-child { margin-top: 0; }
+
+  /* FIELDS */
+  .field { margin-bottom: 0.875rem; }
+  .field label { display: block; font-size: 0.73rem; font-weight: 500; color: var(--brown); margin-bottom: 5px; }
+  input[type="text"], input[type="tel"], input[type="email"], input[type="number"], input[type="date"], select, textarea {
+    width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--dark);
+    background: var(--warm); outline: none; transition: border-color 0.15s; -webkit-appearance: none; appearance: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); background: #fff; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239B8E82' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+  /* PHOTO */
+  .photo-section { margin-bottom: 0.875rem; }
+  .photo-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+  .photo-btn { padding: 10px; border: 1.5px dashed var(--border); border-radius: 12px; background: var(--warm); font-size: 0.82rem; font-weight: 500; cursor: pointer; text-align: center; color: var(--muted); transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .photo-btn:hover { border-color: var(--gold); color: var(--dark); }
+  .photo-btn.selected { border-color: var(--green); background: var(--green-light); color: var(--green); border-style: solid; }
+  .photo-preview { margin-top: 8px; border-radius: 12px; overflow: hidden; display: none; }
+  .photo-preview img { width: 100%; max-height: 200px; object-fit: cover; }
+  .photo-preview.show { display: block; }
+
+  /* BUTTONS */
+  .btn-primary { width: 100%; padding: 15px; background: var(--dark); color: var(--gold2); border: none; border-radius: 14px; font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.15s; margin-top: 1.25rem; }
+  .btn-primary:hover { background: var(--brown); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+  .spinner { display: none; width: 20px; height: 20px; border: 2px solid rgba(232,201,106,0.3); border-top-color: var(--gold2); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SUCCESS */
+  .success-icon { width: 64px; height: 64px; background: var(--green-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 1.25rem; animation: pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+  @keyframes pop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  .success-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; text-align: center; margin-bottom: 0.4rem; }
+  .success-sub { font-size: 0.82rem; color: var(--muted); text-align: center; margin-bottom: 1.25rem; line-height: 1.6; }
+  .success-details { background: var(--warm); border-radius: 12px; padding: 0.875rem 1rem; margin-bottom: 1.25rem; }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 0.82rem; border-bottom: 1px solid var(--border); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .lbl { color: var(--muted); font-size: 0.75rem; }
+  .detail-row .val { font-weight: 600; }
+  .btn-nuevo { width: 100%; padding: 13px; background: transparent; color: var(--brown); border: 1.5px solid var(--border); border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-nuevo:hover { border-color: var(--gold); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--red); color: #fff; padding: 11px 18px; border-radius: 12px; font-size: 0.82rem; font-weight: 500; box-shadow: var(--shadow-lg); transition: transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275); z-index: 100; max-width: 320px; text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success-toast { background: var(--green); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo-wrap"><span>🎈</span></div>
+    <h1>Eventos <em>El Balero</em></h1>
+    <p class="subtitle">Sistema interno · Equipo</p>
+  </div>
+
+  <!-- PIN SCREEN -->
+  <div class="card" id="pin-screen">
+    <div class="gold-line"></div>
+    <div class="card-inner">
+      <p class="pin-title">Acceso al sistema</p>
+      <p class="pin-sub">Ingresa tu PIN personal de 4 dígitos</p>
+      <div class="pin-dots">
+        <div class="pin-dot" id="d0"></div>
+        <div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div>
+        <div class="pin-dot" id="d3"></div>
+      </div>
+      <div class="pin-grid">
+        <button class="pin-btn" onclick="pinPress('1')">1</button>
+        <button class="pin-btn" onclick="pinPress('2')">2<span class="letters">ABC</span></button>
+        <button class="pin-btn" onclick="pinPress('3')">3<span class="letters">DEF</span></button>
+        <button class="pin-btn" onclick="pinPress('4')">4<span class="letters">GHI</span></button>
+        <button class="pin-btn" onclick="pinPress('5')">5<span class="letters">JKL</span></button>
+        <button class="pin-btn" onclick="pinPress('6')">6<span class="letters">MNO</span></button>
+        <button class="pin-btn" onclick="pinPress('7')">7<span class="letters">PQRS</span></button>
+        <button class="pin-btn" onclick="pinPress('8')">8<span class="letters">TUV</span></button>
+        <button class="pin-btn" onclick="pinPress('9')">9<span class="letters">WXYZ</span></button>
+        <button class="pin-btn zero" onclick="pinPress('0')">0</button>
+        <button class="pin-btn del" onclick="pinDel()">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-app" style="display:none">
+
+    <!-- Badge de quien esta usando la app -->
+    <div id="quien-registra-badge" style="text-align:center;font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;font-family:'DM Mono',monospace;letter-spacing:0.03em"></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" id="tab-apartar" onclick="switchTab('apartar')">📅 Apartar fecha</button>
+      <button class="tab" id="tab-pago" onclick="switchTab('pago')">💳 Registrar pago</button>
+    </div>
+
+    <!-- WEBHOOK BAR -->
+    <div class="webhook-bar">
+      <label>Webhook</label>
+      <input type="text" id="webhook-url" value="https://comunicacionesenlanube.app.n8n.cloud/webhook/balero-apartar">
+      <div class="status-dot" id="webhook-dot"></div>
+    </div>
+
+    <!-- ══ TAB APARTAR ══ -->
+    <div id="screen-apartar">
+      <div class="card">
+        <div class="gold-line"></div>
+
+        <!-- Form Apartar -->
+        <div class="card-inner" id="apartar-form">
+          <div class="toggle-row" id="toggle-row" onclick="toggleNuevo()">
+            <div class="toggle-label">
+              <strong>⭐ Cliente nuevo</strong>
+              <span>No existe en el sistema</span>
+            </div>
+            <div class="toggle-switch" id="toggle-switch"></div>
+          </div>
+
+          <div id="search-section-ap">
+            <div class="section-title" style="margin-top:0">Buscar cliente</div>
+            <div class="search-box">
+              <input type="tel" id="tel-busqueda-ap" placeholder="Teléfono del cliente..." oninput="resetSearchAp()" onkeydown="if(event.key==='Enter')buscarClienteAp()">
+              <button class="search-btn" onclick="buscarClienteAp()">🔍</button>
+            </div>
+            <div class="found-card" id="found-card-ap">
+              <div class="found-header">
+                <span class="found-name" id="found-name-ap"></span>
+                <span class="found-badge" id="found-badge-ap">✓ Encontrado</span>
+              </div>
+              <div class="found-details" id="found-details-ap"></div>
+              <div id="pdf-btn-wrap-ap"></div>
+            </div>
+            <div class="not-found-msg" id="not-found-ap">📵 No encontrado. Sigue buscando o activa "Cliente nuevo".</div>
+          </div>
+
+          <div id="datos-ap" style="display:none">
+            <div class="section-title">Cliente</div>
+            <div class="field"><label>Nombre completo</label><input type="text" id="ap-nombre" placeholder="Ej. María González"></div>
+            <div class="field-row">
+              <div class="field"><label>Teléfono</label><input type="tel" id="ap-telefono" placeholder="222 000 0000"></div>
+              <div class="field"><label>Correo</label><input type="email" id="ap-correo" placeholder="correo@mail.com"></div>
+            </div>
+            <div class="section-title">Evento</div>
+            <div class="field">
+              <label>Tipo de evento</label>
+              <select id="ap-tipo">
+                <option value="">Seleccionar...</option>
+                <option value="Cumpleaños">🎂 Cumpleaños</option>
+                <option value="Bautizo">💧 Bautizo</option>
+                <option value="Primera Comunión">✝️ Primera Comunión</option>
+                <option value="Graduación">🎓 Graduación</option>
+                <option value="Otro">🎉 Otro evento</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Fecha del evento</label><input type="date" id="ap-fecha" min=""></div>
+              <div class="field"><label>No. de invitados</label><input type="number" id="ap-invitados" placeholder="Ej. 80" min="1" max="400"></div>
+            </div>
+            <div class="section-title">Anticipo</div>
+
+            <!-- Toggle Cliente Especial -->
+            <div class="toggle-row" id="toggle-especial" onclick="toggleEspecial()" style="margin-bottom:1rem">
+              <div class="toggle-label">
+                <strong>⭐ Cliente Especial</strong>
+                <span>No paga anticipo (familiar/conocido)</span>
+              </div>
+              <div class="toggle-switch" id="toggle-especial-sw"></div>
+            </div>
+
+            <div id="anticipo-section">
+              <div class="field-row">
+                <div class="field"><label>Monto recibido ($MXN)</label><input type="number" id="ap-anticipo" placeholder="2500" min="0" value="2500"></div>
+              <div class="field">
+                <label>Método de pago</label>
+                <select id="ap-metodo">
+                  <option value="">Seleccionar...</option>
+                  <option value="Efectivo">💵 Efectivo</option>
+                  <option value="Tarjeta">💳 Tarjeta</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Foto del recibo - obligatoria para anticipo normal -->
+            <div id="foto-recibo-section">
+              <div class="section-title">Foto del recibo <span style="color:var(--red);font-size:0.7rem">* obligatoria</span></div>
+              <div class="photo-options">
+                <button class="photo-btn" id="btn-camara-ap" onclick="tomarFotoAp()">📷 Tomar foto del recibo</button>
+                <button class="photo-btn" id="btn-galeria-ap" onclick="document.getElementById('input-galeria-ap').click()">🖼️ Seleccionar de galería</button>
+              </div>
+              <input type="file" id="input-camara-ap" accept="image/*" capture="environment" style="display:none" onchange="fotoSeleccionadaAp(event)">
+              <input type="file" id="input-galeria-ap" accept="image/*" style="display:none" onchange="fotoSeleccionadaAp(event)">
+              <div class="photo-preview" id="photo-preview-ap">
+                <img id="photo-img-ap" src="" alt="Recibo">
+              </div>
+              <p id="foto-requerida-msg" style="display:none;color:var(--red);font-size:0.78rem;margin-top:6px">⚠️ La foto del recibo es obligatoria</p>
+            </div>
+            </div><!-- end anticipo-section -->
+
+            <button class="btn-primary" id="btn-apartar" onclick="apartar()">
+              <span id="btn-apartar-txt">✅ Apartar fecha</span>
+              <div class="spinner" id="spinner-ap"></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Success Apartar -->
+        <div class="card-inner" id="apartar-success" style="display:none">
+          <div class="success-icon">🎉</div>
+          <p class="success-title" style="color:var(--green)">¡Fecha apartada!</p>
+          <p class="success-sub" id="ap-success-sub">Registrado en Kommo y Calendar.</p>
+          <div class="success-details" id="ap-success-details"></div>
+          <button class="btn-nuevo" onclick="resetApartar()">+ Nuevo apartado</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB PAGO ══ -->
+    <div id="screen-pago" style="display:none">
+      <div class="card">
+        <div class="gold-line"></div>
+
+        <!-- Form Pago -->
+        <div class="card-inner" id="pago-form">
+          <div class="section-title" style="margin-top:0">Buscar cliente</div>
+          <div class="search-box">
+            <input type="tel" id="tel-busqueda-pg" placeholder="Teléfono del cliente..." oninput="resetSearchPg()" onkeydown="if(event.key==='Enter')buscarClientePg()">
+            <button class="search-btn" onclick="buscarClientePg()">🔍</button>
+          </div>
+
+          <div class="found-card" id="found-card-pg">
+            <div class="found-header">
+              <span class="found-name" id="found-name-pg"></span>
+              <span class="found-badge">✓ Encontrado</span>
+            </div>
+            <div class="found-details" id="found-details-pg"></div>
+            <div class="found-stats" id="found-stats-pg" style="display:none">
+              <div class="stat-pill">
+                <div class="val" id="pg-total-pagado">$0</div>
+                <div class="lbl">Total pagado</div>
+              </div>
+              <div class="stat-pill">
+                <div class="val" id="pg-saldo"></div>
+                <div class="lbl">Pendiente est.</div>
+              </div>
+            </div>
+          </div>
+          <div class="not-found-msg" id="not-found-pg">📵 No encontrado. Verifica el teléfono.</div>
+
+          <div id="datos-pg" style="display:none">
+            <div class="section-title">Pago</div>
+            <div class="field-row">
+              <div class="field"><label>Monto ($MXN)</label><input type="number" id="pg-monto" placeholder="0" min="1"></div>
+              <div class="field">
+                <label>Método</label>
+                <select id="pg-metodo">
+                  <option value="">Seleccionar...</option>
+                  <option value="Efectivo">💵 Efectivo</option>
+                  <option value="Tarjeta crédito">💳 Tarjeta crédito</option>
+                  <option value="Tarjeta débito">💳 Tarjeta débito</option>
+                  <option value="Transferencia">🏦 Transferencia</option>
+                </select>
+              </div>
+            </div>
+            <div class="field"><label>Referencia / Nota (opcional)</label><input type="text" id="pg-referencia" placeholder="Ej. Terminal 001, efectivo caja"></div>
+
+            <div class="photo-section">
+              <div class="section-title">Comprobante (opcional)</div>
+              <div class="photo-options">
+                <button class="photo-btn" id="btn-camara" onclick="tomarFoto()">📷 Tomar foto</button>
+                <button class="photo-btn" id="btn-sin-foto" onclick="sinFoto()">🚫 Sin comprobante</button>
+              </div>
+              <input type="file" id="input-camara" accept="image/*" capture="environment" style="display:none" onchange="fotoSeleccionada(event)">
+              <div class="photo-preview" id="photo-preview">
+                <img id="photo-img" src="" alt="Comprobante">
+              </div>
+            </div>
+
+            <button class="btn-primary" id="btn-pago" onclick="registrarPago()">
+              <span id="btn-pago-txt">💳 Registrar pago</span>
+              <div class="spinner" id="spinner-pg"></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Success Pago -->
+        <div class="card-inner" id="pago-success" style="display:none">
+          <div class="success-icon">✅</div>
+          <p class="success-title" style="color:var(--green)">¡Pago registrado!</p>
+          <p class="success-sub">El pago quedó registrado en Kommo.</p>
+          <div class="success-details" id="pg-success-details"></div>
+          <button class="btn-nuevo" onclick="resetPago()">+ Registrar otro pago</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const PINS = {
+  '9854': 'María Ferrari',
+  '9966': 'Carolina Cadillac'
+};
+let quienRegistra = '';
+let pinActual = '';
+let esNuevo = false;
+let leadAp = null;
+let leadPg = null;
+let fotoBase64 = null;
+let sinComprobante = false;
+
+document.getElementById('ap-fecha').min = new Date().toISOString().split('T')[0];
+
+// ── PIN ──
+function pinPress(n) {
+  if (pinActual.length >= 4) return;
+  pinActual += n;
+  updateDots();
+  if (pinActual.length === 4) setTimeout(checkPin, 150);
+}
+function pinDel() { pinActual = pinActual.slice(0,-1); updateDots(); }
+function updateDots(error=false) {
+  for (let i=0;i<4;i++) {
+    const d = document.getElementById(`d${i}`);
+    d.className = 'pin-dot';
+    if (error) d.classList.add('error');
+    else if (i < pinActual.length) d.classList.add('filled');
+  }
+}
+function checkPin() {
+  if (PINS[pinActual]) {
+    quienRegistra = PINS[pinActual];
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    document.getElementById('quien-registra-badge').textContent = '👤 ' + quienRegistra;
+    testWebhook();
+  } else {
+    updateDots(true);
+    setTimeout(() => { pinActual = ''; updateDots(); }, 600);
+  }
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  document.getElementById('tab-apartar').className = 'tab' + (tab==='apartar'?' active':'');
+  document.getElementById('tab-pago').className = 'tab' + (tab==='pago'?' active':'');
+  document.getElementById('screen-apartar').style.display = tab==='apartar'?'block':'none';
+  document.getElementById('screen-pago').style.display = tab==='pago'?'block':'none';
+}
+
+// ── WEBHOOK ──
+async function testWebhook() {
+  const dot = document.getElementById('webhook-dot');
+  dot.className = 'status-dot checking';
+  const url = document.getElementById('webhook-url').value.trim();
+  try {
+    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({accion:'ping'}) });
+    dot.className = 'status-dot ' + (r.status < 500 ? 'ok' : 'err');
+  } catch(e) { dot.className = 'status-dot err'; }
+}
+document.getElementById('webhook-url').addEventListener('change', testWebhook);
+
+// ── BUSCAR CLIENTE (común) ──
+async function buscarCliente(tel, prefix) {
+  const url = document.getElementById('webhook-url').value.trim();
+  const btn = document.querySelector(`#search-section-${prefix} .search-btn`) || document.querySelector(`#screen-pago .search-btn`);
+  if(btn) btn.textContent = '⏳';
+  try {
+    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ accion: 'buscar', telefono: tel }) });
+    const data = await r.json();
+    if(btn) btn.textContent = '🔍';
+    return data;
+  } catch(e) {
+    if(btn) btn.textContent = '🔍';
+    showToast('Error de conexión');
+    return null;
+  }
+}
+
+// ── APARTAR ──
+function toggleNuevo() {
+  esNuevo = !esNuevo;
+  const sw = document.getElementById('toggle-switch');
+  const row = document.getElementById('toggle-row');
+  sw.className = 'toggle-switch' + (esNuevo?' on':'');
+  row.className = 'toggle-row' + (esNuevo?' active':'');
+  document.getElementById('search-section-ap').style.display = esNuevo ? 'none' : 'block';
+  document.getElementById('datos-ap').style.display = esNuevo ? 'block' : 'none';
+  if (esNuevo) { leadAp = null; resetSearchAp(); }
+}
+
+function resetSearchAp() {
+  document.getElementById('found-card-ap').classList.remove('show');
+  document.getElementById('not-found-ap').classList.remove('show');
+  if (!esNuevo) document.getElementById('datos-ap').style.display = 'none';
+  leadAp = null;
+}
+
+async function buscarClienteAp() {
+  const tel = document.getElementById('tel-busqueda-ap').value.trim();
+  if (!tel) return;
+  const data = await buscarCliente(tel, 'ap');
+  if (!data) return;
+  if (data.encontrado) {
+    leadAp = data;
+    const fc = document.getElementById('found-card-ap');
+    fc.className = 'found-card show' + (data.ya_apartado ? ' warning' : '');
+    document.getElementById('found-name-ap').textContent = data.nombre;
+    document.getElementById('found-badge-ap').textContent = data.ya_apartado ? '⚠ Ya apartado' : '✓ Encontrado';
+    let det = '';
+    if (data.tipo_evento) det += `🎉 ${data.tipo_evento}`;
+    if (data.fecha_evento) det += ` · 📅 ${data.fecha_evento}`;
+    if (data.total_invitados) det += ` · 👥 ${data.total_invitados} inv.`;
+    if (data.horas_evento) det += ` · ⏱️ ${data.horas_evento}`;
+    if (data.email) det += `<br>✉️ ${data.email}`;
+    if (data.lead_id) det += `<br><a href="https://tristancomunicacionesenlanubecom.kommo.com/leads/detail/${data.lead_id}" target="_blank" style="color:inherit;text-decoration:underline;font-family:'DM Mono',monospace;font-size:0.75rem">🔗 Lead #${data.lead_id}</a>`;
+    document.getElementById('found-details-ap').innerHTML = det || 'Sin datos adicionales';
+    document.getElementById('pdf-btn-wrap-ap').innerHTML = data.pdf_url ? `<a href="${data.pdf_url}" target="_blank" class="btn-pdf">📄 Ver cotización</a>` : '';
+    document.getElementById('not-found-ap').classList.remove('show');
+    document.getElementById('datos-ap').style.display = 'block';
+    document.getElementById('ap-nombre').value = data.nombre || '';
+    document.getElementById('ap-telefono').value = data.telefono || '';
+    document.getElementById('ap-correo').value = data.email || '';
+    if (data.tipo_evento) document.getElementById('ap-tipo').value = data.tipo_evento;
+    if (data.fecha_evento) document.getElementById('ap-fecha').value = data.fecha_evento;
+    if (data.total_invitados) document.getElementById('ap-invitados').value = data.total_invitados;
+  } else {
+    document.getElementById('found-card-ap').classList.remove('show');
+    document.getElementById('not-found-ap').classList.add('show');
+  }
+}
+
+async function apartar() {
+  const nombre = document.getElementById('ap-nombre').value.trim();
+  const telefono = document.getElementById('ap-telefono').value.trim();
+  const correo = document.getElementById('ap-correo').value.trim();
+  const tipo = document.getElementById('ap-tipo').value;
+  const fecha = document.getElementById('ap-fecha').value;
+  const invitados = parseInt(document.getElementById('ap-invitados').value);
+  const anticipo = parseFloat(document.getElementById('ap-anticipo').value) || 0;
+  const metodo = document.getElementById('ap-metodo').value;
+  const url = document.getElementById('webhook-url').value.trim();
+
+  if (!nombre) { showToast('Ingresa el nombre'); return; }
+  if (!telefono) { showToast('Ingresa el teléfono'); return; }
+  if (!tipo) { showToast('Selecciona el tipo de evento'); return; }
+  if (!fecha) { showToast('Selecciona la fecha'); return; }
+  if (!invitados) { showToast('Ingresa el número de invitados'); return; }
+
+  // Validación mínimos
+  const fd = new Date(fecha + 'T12:00:00');
+  const dia = fd.getDay(); const mes = fd.getMonth()+1;
+  const alta = mes===7||mes===12;
+  const mins = {normal:{0:80,1:35,2:50,3:50,4:50,5:80,6:100},alta:{0:100,1:50,2:50,3:50,4:50,5:100,6:150}};
+  const min = alta ? mins.alta[dia] : mins.normal[dia];
+  const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  if (invitados < min) { showToast(`Mínimo ${min} inv. para ${dias[dia]}${alta?' (temp. alta)':''}`); return; }
+
+  const btn = document.getElementById('btn-apartar');
+  btn.disabled = true;
+  document.getElementById('btn-apartar-txt').style.display = 'none';
+  document.getElementById('spinner-ap').style.display = 'block';
+
+  try {
+    // Validate foto if not cliente especial
+    if (!esClienteEspecial && !fotoReciboBase64) {
+      document.getElementById('foto-requerida-msg').style.display = 'block';
+      showToast('La foto del recibo es obligatoria');
+      return;
+    }
+
+    const payload = {
+      accion: 'apartar_definitivo', es_nuevo: esNuevo || !leadAp,
+      cliente_especial: esClienteEspecial,
+      quien_registra: quienRegistra,
+      tiene_foto: !!fotoReciboBase64,
+      foto_base64: fotoReciboBase64 || null,
+      fecha_pago: new Date().toISOString().split('T')[0],
+      lead_id: leadAp?.lead_id || null, contacto_id: leadAp?.contacto_id || null,
+      nombre, telefono, correo, tipo_evento: tipo, fecha, invitados, anticipo, metodo_pago: metodo,
+      dia_semana: dias[dia], temporada: alta ? 'alta' : 'normal'
+    };
+    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const resp = await r.json();
+    if (resp.ya_apartado) { showToast('⚠️ Ya está registrado como APARTADO'); btn.disabled=false; document.getElementById('btn-apartar-txt').style.display='block'; document.getElementById('spinner-ap').style.display='none'; return; }
+    const fechaStr = fd.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('ap-success-sub').textContent = esNuevo ? 'Lead creado en Kommo y evento en Calendar.' : 'Lead actualizado en Kommo y evento en Calendar.';
+    document.getElementById('ap-success-details').innerHTML = `
+      <div class="detail-row"><span class="lbl">Cliente</span><span class="val">${nombre}</span></div>
+      <div class="detail-row"><span class="lbl">Evento</span><span class="val">${tipo}</span></div>
+      <div class="detail-row"><span class="lbl">Fecha</span><span class="val">${fechaStr}</span></div>
+      <div class="detail-row"><span class="lbl">Invitados</span><span class="val">${invitados} personas</span></div>
+      ${anticipo>0?`<div class="detail-row"><span class="lbl">Anticipo</span><span class="val" style="color:var(--green)">$${anticipo.toLocaleString('es-MX')} — ${metodo}</span></div>`:''}
+    `;
+    document.getElementById('apartar-form').style.display = 'none';
+    document.getElementById('apartar-success').style.display = 'block';
+  } catch(e) {
+    showToast('Error al apartar. Verifica el webhook.');
+    btn.disabled=false; document.getElementById('btn-apartar-txt').style.display='block'; document.getElementById('spinner-ap').style.display='none';
+  }
+}
+
+function resetApartar() {
+  esNuevo=false; leadAp=null;
+  document.getElementById('toggle-switch').className='toggle-switch';
+  document.getElementById('toggle-row').className='toggle-row';
+  document.getElementById('search-section-ap').style.display='block';
+  document.getElementById('datos-ap').style.display='none';
+  document.getElementById('tel-busqueda-ap').value='';
+  ['ap-nombre','ap-telefono','ap-correo','ap-anticipo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ap-tipo').value='';
+  document.getElementById('ap-fecha').value='';
+  document.getElementById('ap-invitados').value='';
+  document.getElementById('ap-metodo').value='';
+  document.getElementById('btn-apartar').disabled=false;
+  document.getElementById('btn-apartar-txt').style.display='block';
+  document.getElementById('spinner-ap').style.display='none';
+  esClienteEspecial = false;
+  fotoReciboBase64 = null;
+  document.getElementById('toggle-especial-sw').className = 'toggle-switch';
+  document.getElementById('toggle-especial').className = 'toggle-row';
+  document.getElementById('anticipo-section').style.display = 'block';
+  document.getElementById('foto-recibo-section').style.display = 'block';
+  document.getElementById('photo-preview-ap').classList.remove('show');
+  document.getElementById('btn-camara-ap').className = 'photo-btn';
+  document.getElementById('btn-galeria-ap').className = 'photo-btn';
+  document.getElementById('foto-requerida-msg').style.display = 'none';
+  resetSearchAp();
+  document.getElementById('apartar-success').style.display='none';
+  document.getElementById('apartar-form').style.display='block';
+}
+
+// ── PAGO ──
+function resetSearchPg() {
+  document.getElementById('found-card-pg').classList.remove('show');
+  document.getElementById('not-found-pg').classList.remove('show');
+  document.getElementById('datos-pg').style.display='none';
+  document.getElementById('found-stats-pg').style.display='none';
+  leadPg=null;
+}
+
+async function buscarClientePg() {
+  const tel = document.getElementById('tel-busqueda-pg').value.trim();
+  if (!tel) return;
+  const data = await buscarCliente(tel, 'pg');
+  if (!data) return;
+  if (data.encontrado) {
+    leadPg = data;
+    document.getElementById('found-card-pg').classList.add('show');
+    document.getElementById('found-name-pg').textContent = data.nombre;
+    let det = '';
+    if (data.tipo_evento) det += `🎉 ${data.tipo_evento}`;
+    if (data.fecha_evento) det += ` · 📅 ${data.fecha_evento}`;
+    if (data.total_invitados) det += ` · 👥 ${data.total_invitados} inv.`;
+    if (data.horas_evento) det += ` · ⏱️ ${data.horas_evento}`;
+    if (data.email) det += `<br>✉️ ${data.email}`;
+    if (data.lead_id) det += `<br><a href="https://tristancomunicacionesenlanubecom.kommo.com/leads/detail/${data.lead_id}" target="_blank" style="color:inherit;text-decoration:underline;font-family:'DM Mono',monospace;font-size:0.75rem">🔗 Lead #${data.lead_id}</a>`;
+    document.getElementById('found-details-pg').innerHTML = det || '';
+    document.getElementById('not-found-pg').classList.remove('show');
+
+    // Show payment stats if available
+    if (data.total_pagado !== null && data.total_pagado !== undefined) {
+      document.getElementById('found-stats-pg').style.display = 'grid';
+      document.getElementById('pg-total-pagado').textContent = `$${parseInt(data.total_pagado||0).toLocaleString('es-MX')}`;
+      document.getElementById('pg-saldo').textContent = data.saldo ? `$${parseInt(data.saldo).toLocaleString('es-MX')}` : 'N/D';
+    }
+
+    document.getElementById('datos-pg').style.display = 'block';
+    document.getElementById('pg-monto').value = '';
+    document.getElementById('pg-metodo').value = '';
+    document.getElementById('pg-referencia').value = '';
+    resetFoto();
+  } else {
+    document.getElementById('found-card-pg').classList.remove('show');
+    document.getElementById('not-found-pg').classList.add('show');
+  }
+}
+
+// ── FOTO ──
+function tomarFoto() {
+  document.getElementById('input-camara').click();
+}
+
+function fotoSeleccionada(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    fotoBase64 = e.target.result;
+    sinComprobante = false;
+    document.getElementById('photo-img').src = fotoBase64;
+    document.getElementById('photo-preview').classList.add('show');
+    document.getElementById('btn-camara').className = 'photo-btn selected';
+    document.getElementById('btn-sin-foto').className = 'photo-btn';
+  };
+  reader.readAsDataURL(file);
+}
+
+function sinFoto() {
+  fotoBase64 = null;
+  sinComprobante = true;
+  document.getElementById('photo-preview').classList.remove('show');
+  document.getElementById('btn-sin-foto').className = 'photo-btn selected';
+  document.getElementById('btn-camara').className = 'photo-btn';
+}
+
+function resetFoto() {
+  fotoBase64 = null; sinComprobante = false;
+  document.getElementById('photo-preview').classList.remove('show');
+  document.getElementById('btn-camara').className = 'photo-btn';
+  document.getElementById('btn-sin-foto').className = 'photo-btn';
+  document.getElementById('input-camara').value = '';
+}
+
+async function registrarPago() {
+  if (!leadPg) { showToast('Busca un cliente primero'); return; }
+  const monto = parseFloat(document.getElementById('pg-monto').value);
+  const metodo = document.getElementById('pg-metodo').value;
+  const referencia = document.getElementById('pg-referencia').value.trim();
+  const url = document.getElementById('webhook-url').value.trim();
+
+  if (!monto || monto <= 0) { showToast('Ingresa el monto del pago'); return; }
+  if (!metodo) { showToast('Selecciona el método de pago'); return; }
+  if (!sinComprobante && !fotoBase64) { showToast('Toma una foto del comprobante o selecciona "Sin comprobante"'); return; }
+
+  const btn = document.getElementById('btn-pago');
+  btn.disabled = true;
+  document.getElementById('btn-pago-txt').style.display = 'none';
+  document.getElementById('spinner-pg').style.display = 'block';
+
+  try {
+    const payload = {
+      accion: 'registrar_pago',
+      quien_registra: quienRegistra,
+      lead_id: leadPg.lead_id,
+      contacto_id: leadPg.contacto_id,
+      nombre: leadPg.nombre,
+      monto, metodo, referencia,
+      tiene_foto: !!fotoBase64,
+      foto_base64: fotoBase64 || null,
+      fecha_pago: new Date().toISOString().split('T')[0]
+    };
+
+    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!r.ok) throw new Error(`Error ${r.status}`);
+
+    const fechaHora = new Date().toLocaleString('es-MX',{timeZone:'America/Mexico_City',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('pg-success-details').innerHTML = `
+      <div class="detail-row"><span class="lbl">Cliente</span><span class="val">${leadPg.nombre}</span></div>
+      <div class="detail-row"><span class="lbl">Monto</span><span class="val" style="color:var(--green)">$${monto.toLocaleString('es-MX')} MXN</span></div>
+      <div class="detail-row"><span class="lbl">Método</span><span class="val">${metodo}</span></div>
+      ${referencia?`<div class="detail-row"><span class="lbl">Referencia</span><span class="val">${referencia}</span></div>`:''}
+      <div class="detail-row"><span class="lbl">Fecha y hora</span><span class="val">${fechaHora}</span></div>
+      <div class="detail-row"><span class="lbl">Comprobante</span><span class="val">${fotoBase64?'📷 Foto adjunta':'Sin comprobante'}</span></div>
+    `;
+    document.getElementById('pago-form').style.display = 'none';
+    document.getElementById('pago-success').style.display = 'block';
+  } catch(e) {
+    showToast('Error al registrar. Verifica el webhook.');
+    btn.disabled=false; document.getElementById('btn-pago-txt').style.display='block'; document.getElementById('spinner-pg').style.display='none';
+  }
+}
+
+function resetPago() {
+  leadPg=null;
+  document.getElementById('tel-busqueda-pg').value='';
+  document.getElementById('pg-monto').value='';
+  document.getElementById('pg-metodo').value='';
+  document.getElementById('pg-referencia').value='';
+  document.getElementById('btn-pago').disabled=false;
+  document.getElementById('btn-pago-txt').style.display='block';
+  document.getElementById('spinner-pg').style.display='none';
+  resetSearchPg(); resetFoto();
+  document.getElementById('pago-success').style.display='none';
+  document.getElementById('pago-form').style.display='block';
+}
+
+
+let esClienteEspecial = false;
+let fotoReciboBase64 = null;
+
+function toggleEspecial() {
+  esClienteEspecial = !esClienteEspecial;
+  const sw = document.getElementById('toggle-especial-sw');
+  const row = document.getElementById('toggle-especial');
+  sw.className = 'toggle-switch' + (esClienteEspecial ? ' on' : '');
+  row.className = 'toggle-row' + (esClienteEspecial ? ' active' : '') + ' mb-1';
+  document.getElementById('anticipo-section').style.display = esClienteEspecial ? 'none' : 'block';
+  document.getElementById('foto-recibo-section').style.display = esClienteEspecial ? 'none' : 'block';
+  if (esClienteEspecial) {
+    document.getElementById('ap-anticipo').value = '0';
+    fotoReciboBase64 = null;
+  } else {
+    document.getElementById('ap-anticipo').value = '2500';
+  }
+}
+
+function tomarFotoAp() { document.getElementById('input-camara-ap').click(); }
+
+function fotoSeleccionadaAp(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    fotoReciboBase64 = e.target.result;
+    document.getElementById('photo-img-ap').src = fotoReciboBase64;
+    document.getElementById('photo-preview-ap').classList.add('show');
+    document.getElementById('btn-camara-ap').className = 'photo-btn selected';
+    document.getElementById('btn-galeria-ap').className = 'photo-btn selected';
+    document.getElementById('foto-requerida-msg').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (type?' '+type:'');
+  setTimeout(() => t.className='toast', 3500);
+}
+</script>
+</body>
+</html>
