@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balero · Pagos del cliente</title>
+<style>
+  :root {
+    --bg: #faf8f5;
+    --card: #ffffff;
+    --ink: #2b2520;
+    --muted: #8a8074;
+    --line: #e8e2d8;
+    --accent: #b5562f;
+    --accent-soft: #f3e2da;
+    --ok: #3f7a52;
+    --ok-soft: #e3f0e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  header { margin-bottom: 24px; }
+  header h1 {
+    font-size: 1.35rem;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  header p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+  .summary {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .summary .nombre { font-weight: 600; font-size: 1.05rem; }
+  .summary .lead { color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+  .summary .total { text-align: right; }
+  .summary .total .num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .summary .total .label { font-size: 0.78rem; color: var(--muted); }
+
+  .pago {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .pago .left .monto { font-weight: 600; font-size: 1.05rem; }
+  .pago .left .meta { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .pago .left .meta span { display: inline-block; margin-right: 10px; }
+  .pago .right { text-align: right; flex-shrink: 0; }
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .badge.anticipo { background: var(--ok-soft); color: var(--ok); }
+  .comprobante {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.78rem;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .comprobante:hover { text-decoration: underline; }
+
+  .estado {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .estado.error { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Pagos registrados</h1>
+    <p>Consulta de solo lectura — Eventos El Balero</p>
+  </header>
+
+  <div id="contenido">
+    <div class="estado" id="estado-inicial">Cargando pagos…</div>
+  </div>
+</div>
+
+<script>
+  // --- Configuración de Supabase ---
+  // Reemplazar SUPABASE_ANON_KEY con el valor real del proyecto (Project Settings > API > anon public).
+  // La anon key es segura aquí porque la tabla tiene RLS habilitado con política
+  // de SOLO LECTURA (ver Supabase_RLS_Lectura_Publica_Pagos_v1.sql) — esta key
+  // nunca puede escribir, actualizar ni borrar nada, sin importar quién la vea.
+  const SUPABASE_URL = "https://wioqnoytuukuldldppqe.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpb3Fub3l0dXVrdWxkbGRwcHFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNTcwMTUsImV4cCI6MjA5NDgzMzAxNX0.FraLm2LecVVgY2KDVQRJh-pEiiFCl8CPu2-k-GeUkFo";
+
+  function getLeadId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('lead_id');
+  }
+
+  function formatoMoneda(n) {
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
+  }
+
+  function formatoFecha(f) {
+    if (!f) return '';
+    const d = new Date(f + 'T00:00:00');
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  async function cargarPagos() {
+    const contenido = document.getElementById('contenido');
+    const leadId = getLeadId();
+
+    if (!leadId) {
+      contenido.innerHTML = '<div class="estado error">Falta el lead_id en la liga. Revisa el campo de Kommo.</div>';
+      return;
+    }
+
+    try {
+      const url = `${SUPABASE_URL}/rest/v1/pagos_balero?lead_id=eq.${encodeURIComponent(leadId)}&order=fecha_pago.desc`;
+      const resp = await fetch(url, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      });
+
+      if (!resp.ok) {
+        throw new Error(`Supabase respondió ${resp.status}`);
+      }
+
+      const pagos = await resp.json();
+
+      if (!pagos || pagos.length === 0) {
+        contenido.innerHTML = '<div class="estado">Este cliente todavía no tiene pagos registrados.</div>';
+        return;
+      }
+
+      const total = pagos.reduce((acc, p) => acc + Number(p.monto), 0);
+      const nombre = pagos[0].nombre_cliente || 'Cliente';
+
+      let html = `
+        <div class="summary">
+          <div>
+            <div class="nombre">${nombre}</div>
+            <div class="lead">Lead #${leadId} · ${pagos.length} pago${pagos.length === 1 ? '' : 's'}</div>
+          </div>
+          <div class="total">
+            <div class="num">${formatoMoneda(total)}</div>
+            <div class="label">Total registrado</div>
+          </div>
+        </div>
+      `;
+
+      pagos.forEach(p => {
+        const esAnticipo = p.es_anticipo;
+        const origen = p.origen_pago === 'oficina' ? 'Oficina Balero' : 'WhatsApp';
+        html += `
+          <div class="pago">
+            <div class="left">
+              <div class="monto">${formatoMoneda(p.monto)}</div>
+              <div class="meta">
+                <span>📅 ${formatoFecha(p.fecha_pago)}</span>
+                <span>💳 ${p.metodo_o_banco || origen}</span>
+                ${p.quien_registra ? `<span>👤 ${p.quien_registra}</span>` : ''}
+              </div>
+              ${p.link_comprobante ? `<a class="comprobante" href="${p.link_comprobante}" target="_blank">Ver comprobante →</a>` : ''}
+            </div>
+            <div class="right">
+              <span class="badge ${esAnticipo ? 'anticipo' : ''}">${esAnticipo ? 'Anticipo' : origen}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      contenido.innerHTML = html;
+
+    } catch (err) {
+      contenido.innerHTML = `<div class="estado error">No se pudo cargar la información. Intenta de nuevo en un momento.</div>`;
+      console.error(err);
+    }
+  }
+
+  cargarPagos();
+</script>
+</body>
+</html>
