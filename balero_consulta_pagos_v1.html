@@ -89,6 +89,15 @@
   }
   .comprobante:hover { text-decoration: underline; }
 
+  .conciliacion {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .conciliacion.pendiente { color: var(--muted); }
+  .conciliacion.conciliado { color: var(--ok); }
+
   .estado {
     text-align: center;
     padding: 60px 20px;
@@ -191,6 +200,7 @@
                 ${p.quien_registra ? `<span>👤 ${p.quien_registra}</span>` : ''}
               </div>
               ${p.link_comprobante ? `<a class="comprobante" href="${p.link_comprobante}" target="_blank">Ver comprobante →</a>` : ''}
+              <div class="conciliacion ${p.conciliado ? 'conciliado' : 'pendiente'}">${p.conciliado ? '✅ Conciliado' : '⏳ Pendiente de verificación'}</div>
             </div>
             <div class="right">
               <span class="badge ${esAnticipo ? 'anticipo' : ''}">${esAnticipo ? 'Anticipo' : origen}</span>
