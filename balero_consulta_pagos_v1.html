@@ -143,7 +143,7 @@
     }
 
     try {
-      const url = `${SUPABASE_URL}/rest/v1/pagos_balero?lead_id=eq.${encodeURIComponent(leadId)}&order=fecha_pago.desc`;
+      const url = `${SUPABASE_URL}/rest/v1/pagos_balero?lead_id=eq.${encodeURIComponent(leadId)}&order=fecha_registro.desc`;
       const resp = await fetch(url, {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
