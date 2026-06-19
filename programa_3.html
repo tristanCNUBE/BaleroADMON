@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programa de Eventos · Hotel Posada Señorial</title>
+<style>
+  :root{
+    --crema:#f6efe2;
+    --terracota:#b5562f;
+    --terracota-osc:#8f4222;
+    --verde-jardin:#3f5b46;
+    --tinta:#2a241d;
+    --linea:#d9cdb4;
+    --blanco:#fffdf8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--crema);
+    color:var(--tinta);
+    font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;
+    line-height:1.5;
+  }
+  header{
+    padding:48px 24px 28px;
+    text-align:center;
+    border-bottom:1px solid var(--linea);
+  }
+  header .eyebrow{
+    font-family:"Avenir Next",-apple-system,sans-serif;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--terracota-osc);
+    margin-bottom:8px;
+  }
+  header h1{
+    margin:0;
+    font-size:clamp(26px,4vw,38px);
+    font-weight:600;
+    letter-spacing:.01em;
+  }
+  header p{
+    margin:10px auto 0;
+    max-width:480px;
+    font-size:15px;
+    color:#5c5346;
+  }
+  main{
+    max-width:760px;
+    margin:0 auto;
+    padding:40px 20px 80px;
+    display:grid;
+    gap:28px;
+  }
+  .card{
+    background:var(--blanco);
+    border:1px solid var(--linea);
+    border-radius:4px;
+    padding:28px 28px 30px;
+    position:relative;
+  }
+  .card-num{
+    position:absolute;
+    top:-14px;
+    left:24px;
+    background:var(--terracota);
+    color:var(--blanco);
+    font-family:"Avenir Next",-apple-system,sans-serif;
+    font-size:12px;
+    letter-spacing:.08em;
+    padding:4px 12px;
+    border-radius:2px;
+  }
+  .card h2{
+    margin:6px 0 6px;
+    font-size:20px;
+    font-weight:600;
+  }
+  .card p.desc{
+    margin:0 0 20px;
+    color:#5c5346;
+    font-size:14.5px;
+  }
+  label{
+    display:block;
+    font-family:"Avenir Next",-apple-system,sans-serif;
+    font-size:12px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--verde-jardin);
+    margin-bottom:6px;
+  }
+  select, input[type="text"]{
+    width:100%;
+    font-family:inherit;
+    font-size:15px;
+    padding:11px 12px;
+    border:1px solid var(--linea);
+    border-radius:3px;
+    background:var(--crema);
+    color:var(--tinta);
+  }
+  select:focus, input:focus{
+    outline:2px solid var(--terracota);
+    outline-offset:1px;
+  }
+  button{
+    font-family:"Avenir Next",-apple-system,sans-serif;
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:.03em;
+    background:var(--terracota);
+    color:var(--blanco);
+    border:none;
+    padding:13px 22px;
+    border-radius:3px;
+    cursor:pointer;
+    margin-top:18px;
+    transition:background .15s ease;
+  }
+  button:hover{background:var(--terracota-osc);}
+  button:disabled{background:#c9b89e;cursor:not-allowed;}
+  button.secondary{
+    background:var(--verde-jardin);
+  }
+  button.secondary:hover{background:#2e4434;}
+  .status{
+    margin-top:16px;
+    font-size:13.5px;
+    font-family:"Avenir Next",-apple-system,sans-serif;
+    min-height:18px;
+  }
+  .status.ok{color:var(--verde-jardin);}
+  .status.err{color:var(--terracota-osc);}
+  .status.loading{color:#8a7e68;}
+  a.result-link{
+    display:inline-block;
+    margin-top:14px;
+    color:var(--terracota-osc);
+    font-weight:600;
+    text-decoration:none;
+    border-bottom:1px solid var(--terracota-osc);
+  }
+  .lead-row{
+    font-family:"Avenir Next",-apple-system,sans-serif;
+    font-size:13px;
+    color:#5c5346;
+    margin-top:6px;
+  }
+  footer{
+    text-align:center;
+    padding:24px;
+    font-family:"Avenir Next",-apple-system,sans-serif;
+    font-size:11px;
+    letter-spacing:.05em;
+    color:#a89a7c;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .card{animation:rise .4s ease both;}
+    .card:nth-child(2){animation-delay:.08s;}
+  }
+  @keyframes rise{
+    from{opacity:0;transform:translateY(8px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Eventos · Hotel Posada Señorial</div>
+  <h1>Programa Semanal</h1>
+  <p>Genera el Programa completo de la semana, o un evento individual listo para imprimir.</p>
+</header>
+
+<main>
+
+  <section class="card">
+    <span class="card-num">Semana completa</span>
+    <h2>Generar el Programa de la semana</h2>
+    <p class="desc">Toma todos los eventos en la etapa Programa de Kommo y arma la hoja de la semana actual en Google Drive.</p>
+    <button id="btnSemana">Generar Programa de la semana</button>
+    <div id="statusSemana" class="status"></div>
+  </section>
+
+  <section class="card">
+    <span class="card-num">Evento individual</span>
+    <h2>Generar un solo evento</h2>
+    <p class="desc">Busca un evento de la etapa Programa y genera su propia hoja editable en Google Sheets.</p>
+
+    <label for="buscador">Buscar evento</label>
+    <input type="text" id="buscador" placeholder="Escribe el nombre del cliente, salón, tipo de evento o # de lead…" autocomplete="off">
+
+    <label for="selectorLead" style="margin-top:16px;">Eventos en Programa</label>
+    <select id="selectorLead">
+      <option value="">Cargando eventos…</option>
+    </select>
+
+    <button id="btnIndividual" class="secondary" disabled>Generar hoja de este evento</button>
+    <div id="statusIndividual" class="status"></div>
+  </section>
+
+</main>
+
+<footer>Tristán Comunicaciones en la Nube · Automatización interna</footer>
+
+<script>
+const URL_GENERAR_SEMANA = "https://comunicacionesenlanube.app.n8n.cloud/webhook/generar-programa-hotel";
+const URL_LISTAR_LEADS    = "https://comunicacionesenlanube.app.n8n.cloud/webhook/listar-leads-programa";
+const URL_GENERAR_LEAD    = "https://comunicacionesenlanube.app.n8n.cloud/webhook/generar-evento-individual";
+
+const MESES = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+function formatearFecha(unixTs) {
+  if (!unixTs) return 'sin fecha';
+  const d = new Date(Number(unixTs) * 1000);
+  return `${String(d.getUTCDate()).padStart(2,'0')} ${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+// ---------- Generar Programa de la semana ----------
+const btnSemana = document.getElementById('btnSemana');
+const statusSemana = document.getElementById('statusSemana');
+
+btnSemana.addEventListener('click', async () => {
+  btnSemana.disabled = true;
+  statusSemana.className = 'status loading';
+  statusSemana.textContent = 'Generando el Programa de la semana…';
+  try {
+    const res = await fetch(URL_GENERAR_SEMANA, { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+    if (!res.ok) throw new Error('El servidor respondió con un error.');
+    const data = await res.json();
+    statusSemana.className = 'status ok';
+    statusSemana.innerHTML = 'Programa generado. ';
+    const a = document.createElement('a');
+    a.href = data.url;
+    a.target = '_blank';
+    a.className = 'result-link';
+    a.textContent = 'Abrir Programa de la semana';
+    statusSemana.appendChild(a);
+  } catch (err) {
+    statusSemana.className = 'status err';
+    statusSemana.textContent = 'No se pudo generar el Programa: ' + err.message;
+  } finally {
+    btnSemana.disabled = false;
+  }
+});
+
+// ---------- Listar y buscar eventos individuales ----------
+const selectorLead = document.getElementById('selectorLead');
+const buscador = document.getElementById('buscador');
+const btnIndividual = document.getElementById('btnIndividual');
+const statusIndividual = document.getElementById('statusIndividual');
+
+let todosLosLeads = [];
+
+function etiquetaLead(lead) {
+  const salon = lead.salon || 'Sin salón';
+  const tipo = lead.tipoEvento || 'Evento';
+  const fecha = formatearFecha(lead.fechaEventoRaw);
+  const titular = lead.titular ? `${lead.titular} · ` : '';
+  return `${titular}${fecha} · ${tipo} · ${salon} · Lead #${lead.leadId}`;
+}
+
+function pintarOpciones(leads) {
+  selectorLead.innerHTML = '';
+  if (leads.length === 0) {
+    selectorLead.innerHTML = '<option value="">No se encontraron eventos</option>';
+    btnIndividual.disabled = true;
+    return;
+  }
+  selectorLead.innerHTML = '<option value="">Selecciona un evento…</option>' +
+    leads.map(l => `<option value="${l.leadId}">${etiquetaLead(l)}</option>`).join('');
+}
+
+async function cargarLeads() {
+  try {
+    const res = await fetch(URL_LISTAR_LEADS);
+    if (!res.ok) throw new Error('No se pudo cargar la lista.');
+    const data = await res.json();
+    todosLosLeads = data.leads || [];
+    pintarOpciones(todosLosLeads);
+  } catch (err) {
+    selectorLead.innerHTML = '<option value="">Error al cargar eventos</option>';
+  }
+}
+cargarLeads();
+
+buscador.addEventListener('input', () => {
+  const q = buscador.value.trim().toLowerCase();
+  if (!q) { pintarOpciones(todosLosLeads); return; }
+  const filtrados = todosLosLeads.filter(l =>
+    String(l.leadId).includes(q) ||
+    (l.salon || '').toLowerCase().includes(q) ||
+    (l.tipoEvento || '').toLowerCase().includes(q) ||
+    (l.titular || '').toLowerCase().includes(q)
+  );
+  pintarOpciones(filtrados);
+});
+
+selectorLead.addEventListener('change', () => {
+  btnIndividual.disabled = !selectorLead.value;
+  statusIndividual.textContent = '';
+});
+
+btnIndividual.addEventListener('click', async () => {
+  const leadId = selectorLead.value;
+  if (!leadId) return;
+  btnIndividual.disabled = true;
+  statusIndividual.className = 'status loading';
+  statusIndividual.textContent = 'Generando hoja del evento…';
+  try {
+    const res = await fetch(URL_GENERAR_LEAD, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ leadId })
+    });
+    if (!res.ok) throw new Error('El servidor respondió con un error.');
+    const data = await res.json();
+    statusIndividual.className = 'status ok';
+    statusIndividual.innerHTML = 'Hoja generada. ';
+    const a = document.createElement('a');
+    a.href = data.url;
+    a.target = '_blank';
+    a.className = 'result-link';
+    a.textContent = 'Abrir hoja del evento';
+    statusIndividual.appendChild(a);
+  } catch (err) {
+    statusIndividual.className = 'status err';
+    statusIndividual.textContent = 'No se pudo generar la hoja: ' + err.message;
+  } finally {
+    btnIndividual.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
